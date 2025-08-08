@@ -21,8 +21,21 @@ export const ImageAnalyzer = () => {
     try {
       if (!file) return;
       setLoading(true);
-      const buf = await file.arrayBuffer();
-      const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+      // Use FileReader to avoid spreading large arrays causing stack overflow
+      const b64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const result = reader.result as string;
+            const commaIndex = result.indexOf(",");
+            resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      });
       const text = await OpenAIService.describeImage(b64, file.type || "image/png");
       setResult(text);
       toast({ title: "Analysis complete", description: "Image description generated." });
