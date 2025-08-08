@@ -29,6 +29,15 @@ export class OpenAIService {
     });
     if (!res.ok) {
       const text = await res.text();
+      try {
+        const j = JSON.parse(text);
+        if (j.error?.code === "insufficient_quota") {
+          throw new Error("OpenAI quota exceeded. Update billing or use another API key in Settings.");
+        }
+        if (j.error?.message) throw new Error(j.error.message);
+      } catch {
+        // not JSON
+      }
       throw new Error(text || "Failed to transcribe audio");
     }
     return res.json();
@@ -56,7 +65,19 @@ export class OpenAIService {
         temperature: 0.2,
       }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) {
+      const text = await res.text();
+      try {
+        const j = JSON.parse(text);
+        if (j.error?.code === "insufficient_quota") {
+          throw new Error("OpenAI quota exceeded. Update billing or use another API key in Settings.");
+        }
+        if (j.error?.message) throw new Error(j.error.message);
+      } catch {
+        // not JSON
+      }
+      throw new Error(text || "Failed to analyze image");
+    }
     const data = await res.json();
     return data.choices?.[0]?.message?.content ?? "";
   }
@@ -81,7 +102,19 @@ export class OpenAIService {
         temperature: 0.2,
       }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) {
+      const text = await res.text();
+      try {
+        const j = JSON.parse(text);
+        if (j.error?.code === "insufficient_quota") {
+          throw new Error("OpenAI quota exceeded. Update billing or use another API key in Settings.");
+        }
+        if (j.error?.message) throw new Error(j.error.message);
+      } catch {
+        // not JSON
+      }
+      throw new Error(text || "Failed to summarize text");
+    }
     const data = await res.json();
     return data.choices?.[0]?.message?.content ?? "";
   }
